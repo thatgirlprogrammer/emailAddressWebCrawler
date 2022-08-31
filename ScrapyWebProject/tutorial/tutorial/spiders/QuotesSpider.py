@@ -11,7 +11,34 @@ from scrapy_selenium import SeleniumRequest
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 
 
+
 class EmailtrackSpider(scrapy.Spider):
+	def get_requests(self):
+		return [SeleniumRequest(url="https://ccse.kennesaw.edu/",
+								wait_time=3, screenshot=True,
+								callback=self.parse,
+								dont_filter=True
+								), SeleniumRequest(
+								url="https://www.kennesaw.edu/",
+								wait_time=3,
+								screenshot=True,
+								callback=self.parse,
+								dont_filter=True
+								), SeleniumRequest(
+								url="https://www.kennesaw.edu/",
+								wait_time=3,
+								screenshot=True,
+								callback=self.parse,
+								dont_filter=True
+								), SeleniumRequest(
+								url="https://datascience.kennesaw.edu/",
+								wait_time=3,
+								screenshot=True,
+								callback=self.parse,
+								dont_filter=True
+								)
+		]
+
 	# name of spider
 	name = "KSU-CS4422-IRbot/0.1"
 
@@ -21,13 +48,8 @@ class EmailtrackSpider(scrapy.Spider):
 	# start_requests sends request to given https://www.geeksforgeeks.org/
 	# and parse function is called
 	def start_requests(self):
-		yield SeleniumRequest(
-			url="https://ccse.kennesaw.edu/",
-			wait_time=3,
-			screenshot=True,
-			callback=self.parse,
-			dont_filter=True
-		)
+		for i in range(len(self.get_requests())):
+			yield self.get_requests()[i]
 
 	def parse(self, response):
 			# this helps to get all links from source code
