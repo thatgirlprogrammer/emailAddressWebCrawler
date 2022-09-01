@@ -10,41 +10,42 @@ from scrapy_selenium import SeleniumRequest
 # for link extraction
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 import json
-
-
-def get_requests(spider):
-	return [SeleniumRequest(url="https://ccse.kennesaw.edu/",
-							wait_time=3, screenshot=True,
-							callback=spider.parse,
-							dont_filter=True
-							), SeleniumRequest(
-		url="https://www.kennesaw.edu/",
-		wait_time=2,
-		screenshot=True,
-		callback=spider.parse,
-		dont_filter=True
-	), SeleniumRequest(
-		url="https://datascience.kennesaw.edu/",
-		wait_time=2,
-		screenshot=True,
-		callback=spider.parse,
-		dont_filter=True
-	)
-			]
+import scrapy
 
 
 class EmailtrackSpider(scrapy.Spider):
 	# name of spider
+	email_freq = {}
 	name = "KSU-CS4422-IRbot/0.1"
 
 	# to have unique email ids
 	uniqueemail = set()
 
+	def get_requests(self):
+		return [SeleniumRequest(url="https://ccse.kennesaw.edu/",
+								wait_time=2, screenshot=True,
+								callback=self.parse,
+								dont_filter=True
+								), SeleniumRequest(
+			url="https://www.kennesaw.edu/",
+			wait_time=2,
+			screenshot=True,
+			callback=self.parse,
+			dont_filter=True
+		), SeleniumRequest(
+			url="https://datascience.kennesaw.edu/",
+			wait_time=2,
+			screenshot=True,
+			callback=self.parse,
+			dont_filter=True
+		)
+				]
+
 	# start_requests sends request to given https://www.geeksforgeeks.org/
 	# and parse function is called
 	def start_requests(self):
-		for i in range(len(get_requests(self))):
-			yield get_requests(self)[i]
+		for i in range(len(self.get_requests())):
+			yield self.get_requests()[i]
 
 
 	def parse(self, response):
@@ -104,15 +105,15 @@ class EmailtrackSpider(scrapy.Spider):
 			html_text = str(response.text)
 			# regular expression used for email id
 			email_list = re.findall('\w+@\w+\.{1}\w+', html_text)
-			# set of email_list to get unique
-			email_list = set(email_list)
 
 			if (len(email_list) != 0):
 				count_pages += 1
 				for i in email_list:
 					emails.append(i)
-					# adding email ids to final uniqueemail
-					self.uniqueemail.add(i)
+					if i not in self.email_freq:
+						self.email_freq.update({i: 1})
+					else:
+						self.email_freq[i] += 1
 
 		# parse_link function is called till
 		# if condition satisfy
@@ -134,11 +135,9 @@ class EmailtrackSpider(scrapy.Spider):
 				dont_filter=True
 			)
 
-		with open('KSU100.json', 'a', encoding='utf-8') as f:
-			json.dump(emails, f, ensure_ascii=False, indent=4)
-			json.dump("\n"+str(count_pages)+"\n", f, ensure_ascii=False, indent=4)
-			json.dump(response.url, f, ensure_ascii=False, indent=4)
-
+		print(self.email_freq)
+		with open('KSU100.json', 'w', encoding='utf-8') as f:
+			json.dump(self.email_freq, f, ensure_ascii=False, indent=4)
 		return entry
 
 	def parsed(self, response):
@@ -156,5 +155,8 @@ class EmailtrackSpider(scrapy.Spider):
 		print('\n'*2)
 		print("Emails scraped", finalemail)
 		print('\n'*2)
+
+
+
 
 
