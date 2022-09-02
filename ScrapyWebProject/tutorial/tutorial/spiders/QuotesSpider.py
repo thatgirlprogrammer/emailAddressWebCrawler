@@ -1,10 +1,12 @@
 # web scraping framework
+import requests
 import scrapy
 
 # for regular expression
 import re
 
 # for selenium request
+from bs4 import BeautifulSoup
 from scrapy_selenium import SeleniumRequest
 
 # for link extraction
@@ -13,9 +15,24 @@ import json
 import scrapy
 
 
+def clean_wordlist(wordlist):
+	clean_list = []
+	for word in wordlist:
+		symbols = "!@#$%^&*()_-+={[}]|\;:\"<>?/., "
+
+		for i in range(len(symbols)):
+			word = word.replace(symbols[i], '')
+
+		if len(word) > 0:
+			clean_list.append(word)
+	create_dictionary(clean_list)
+
+
+
 class EmailtrackSpider(scrapy.Spider):
 	# name of spider
 	email_freq = {}
+	word_freq = {}
 	name = "KSU-CS4422-IRbot/0.1"
 
 	# to have unique email ids
@@ -47,7 +64,6 @@ class EmailtrackSpider(scrapy.Spider):
 		for i in range(len(self.get_requests())):
 			yield self.get_requests()[i]
 
-
 	def parse(self, response):
 			# this helps to get all links from source code
 			links = LxmlLinkExtractor(allow=()).extract_links(response)
@@ -61,8 +77,7 @@ class EmailtrackSpider(scrapy.Spider):
 			# filtering and storing only needed url in links list
 			# pages that are about us and contact us are the ones that have email ids
 			for link in Finallinks:
-				if ('Contact' in link or 'contact' in link or 'About' in link or 'about' in link or 'CONTACT' in link or 'ABOUT' in link):
-					links.append(link)
+				links.append(link)
 
 			# current page url also added because few sites have email ids on there main page
 			links.append(str(response.url))
@@ -86,27 +101,19 @@ class EmailtrackSpider(scrapy.Spider):
 		links = response.meta['links']
 		flag = 0
 		emails = []
+		wordlist = []
+		clean_list = []
 		count_pages = 0
-
-		# links that contains following bad words are discarded
-		bad_words = ['facebook', 'instagram', 'youtube', 'twitter', 'wiki', 'linkedin']
 		entry = dict.fromkeys(['pageid', 'url', 'title', 'body', 'emails'])
-
-		for word in bad_words:
-			# if any bad word is found in the current page url
-			# flag is assigned to 1
-			if word in str(response.url):
-				flag = 1
-				break
 
 		# if flag is 1 then no need to get email from
 		# that url/page
-		if (flag != 1):
+		if flag != 1:
 			html_text = str(response.text)
 			# regular expression used for email id
 			email_list = re.findall('\w+@\w+\.{1}\w+', html_text)
 
-			if (len(email_list) != 0):
+			if len(email_list) != 0:
 				count_pages += 1
 				for i in email_list:
 					emails.append(i)
@@ -115,10 +122,32 @@ class EmailtrackSpider(scrapy.Spider):
 					else:
 						self.email_freq[i] += 1
 
-		# parse_link function is called till
-		# if condition satisfy
-		# else move to parsed function
-		if (len(links) > 0):
+		if len(links) > 0:
+			source_code = requests.get(links[0]).text
+			soup = BeautifulSoup(source_code, 'html.parser')
+
+			for each_text in soup.findAll('div', {'class': 'entry-content'}):
+				content = each_text.text
+				words = content.lower().split()
+				for word in words:
+					wordlist.append(word)
+
+				for word in wordlist:
+					symbols = "!@#$%^&*()_-+={[}]|\;:\"<>?/., "
+
+					for i in range(len(symbols)):
+						word = word.replace(symbols[i], '')
+
+					if len(word) > 0:
+						clean_list.append(word)
+
+		for word in clean_list:
+			if word in self.word_freq:
+				self.word_freq[word] += 1
+			else:
+				self.word_freq[word] = 1
+
+		if len(links) > 0:
 			l = links[0]
 			links.pop(0)
 
@@ -135,7 +164,7 @@ class EmailtrackSpider(scrapy.Spider):
 				dont_filter=True
 			)
 
-		print(self.email_freq)
+		print(self.word_freq)
 		with open('KSU100.json', 'w', encoding='utf-8') as f:
 			json.dump(self.email_freq, f, ensure_ascii=False, indent=4)
 		return entry
