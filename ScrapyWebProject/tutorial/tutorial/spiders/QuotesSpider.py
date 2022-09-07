@@ -6,18 +6,6 @@ import json
 import scrapy
 
 
-"""def clean_wordlist(wordlist):
-	clean_list = []
-	for word in wordlist:
-		symbols = "!@#$%^&*()_-+={[}]|\;:\"<>?/., "
-
-		for i in range(len(symbols)):
-			word = word.replace(symbols[i], '')
-
-		if len(word) > 0:
-			clean_list.append(word)
-"""
-
 class EmailtrackSpider(CrawlSpider):
 	# name of spider
 	name = 'ksubot'
@@ -28,7 +16,7 @@ class EmailtrackSpider(CrawlSpider):
 	]
 	custom_settings = {
 		'USER_AGENT': "KSU-CS4422-IRbot/0.1",
-		'CLOSESPIDER_PAGECOUNT': 200,
+		'CLOSESPIDER_PAGECOUNT': 100,
 	}
 	rules = [
 		Rule(
@@ -68,5 +56,3 @@ class EmailtrackSpider(CrawlSpider):
 		print('\n'*2)
 		print("Emails scraped", finalemail)
 		print('\n'*2)
-
-

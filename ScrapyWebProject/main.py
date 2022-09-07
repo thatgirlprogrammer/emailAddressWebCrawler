@@ -1,6 +1,8 @@
 import json
+import math
 import string
 import nltk as nltk
+import matplotlib.pyplot as plt  
 
 f = open('tutorial/ksuemail.json')
 data = json.load(f)
@@ -46,12 +48,12 @@ print("Top word freq before removing punctuation and stopwords")
 print("randk\t\tterm\t\t\tfreq")
 print("------\t\t--------\t\t-------")
 count = 1
+values1 = []
 for key in word_freq:
+    count += 1
+    values1.append(word_freq[key])
     if count <= 30:
         print(count, "\t\t", key, "\t\t\t", word_freq[key] / total_words * 100)
-        count += 1
-    else:
-        break
 
 total_words = 0
 for key in word_freq2:
@@ -62,8 +64,18 @@ print("randk\t\tterm\t\t\tfreq")
 print("------\t\t--------\t\t-------")
 count = 1
 for key in word_freq2:
+    count += 1
     if count <= 30:
         print(count, "\t\t", key, "\t\t\t", word_freq2[key] / total_words * 100)
-        count += 1
-    else:
-        break
+
+
+plt.plot(values1)
+plt.ylabel('Word Frequency')
+plt.xlabel('Rank')
+plt.show()
+
+values2 = [math.log10(value) for value in values1]
+plt.plot(values2)
+plt.ylabel('Log Word Frequency')
+plt.xlabel('Rank')
+plt.show()
